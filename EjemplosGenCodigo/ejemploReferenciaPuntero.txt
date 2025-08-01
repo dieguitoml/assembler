@@ -1,0 +1,13 @@
+
+void incrementar(int& a) {
+    int @b = new int;
+    @b = a;
+    cout(@b);
+	return;
+}
+
+void main(){
+	int a = 1;
+	incrementar(a);
+	return;
+}

@@ -1,0 +1,11 @@
+int arreglo[3] = {1, 2, 3};
+
+int accesoArray(){
+    return arreglo[2];
+}
+
+void main(){
+    int resultado = accesoArray();
+    cout(resultado);
+    return;
+}

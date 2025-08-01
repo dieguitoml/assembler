@@ -1,0 +1,60 @@
+int resultados[5];
+
+type int[5] arrayInt;
+type int @ punteroInt;
+type punteroInt[5] arrayPunteroInt;
+
+class Calculadora {
+    Calculadora(){
+	return;
+    }
+
+    int multiplicar(int a, int b) {
+        return a * b;
+    }
+
+    void mostrarResultado(int valor) {
+        cout( valor );
+        return;
+    }
+}
+
+int obtenerMaximo(int datos[5]) {
+    int max = datos[0];
+    int i;
+    for (int i = 1; i < 5; i = i + 1) {
+        if (datos[i] > max) {
+            max = datos[i];
+        }
+    }
+    return max;
+}
+
+void main(){
+ 	int i;
+    Calculadora calc;
+    int entrada[5] = {1, 4, 3, 9, 2};
+
+    for (int i = 0; i < 5; i = i + 1) {
+        resultados[i] = calc.multiplicar(entrada[i], 2);
+    }
+
+    int maximo = obtenerMaximo(resultados);
+    int hola = entrada[4];
+    int adios = entrada[3];
+
+    switch(maximo) {
+	case 0:
+		cout(hola);
+
+	default:
+		cout(adios);
+    }
+
+    while(i < 5) {
+        cout( resultados[i] );
+        i = i + 1;
+    }
+
+return;
+}

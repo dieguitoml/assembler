@@ -1,0 +1,18 @@
+
+int y = 3;
+
+int mayor(int x){
+    if(x > y){
+        return x;
+    } else {
+        return y;
+    }
+    return x;
+}
+
+void main(){
+    int a = 6;
+    int resultado = mayor(a);
+    cout(resultado);
+    return;
+}

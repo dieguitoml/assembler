@@ -1,0 +1,42 @@
+type int Entero;
+type bool Booleano;
+
+struct Punto {
+    Entero x;
+    Entero y;
+};
+
+Entero fila[5];
+
+Entero[5] generarFila(Entero base) {
+    Entero resultado[5] = {0, 0, 0, 0, 0};
+    for (Entero i = 0; i < 5; i = i + 1) {
+        resultado[i] = base + i;
+    }
+    return resultado;
+}
+
+void imprimirFila(Entero valores[5]) {
+    for (Entero i = 0; i < 5; i = i + 1) {
+        cout(valores[i]);
+    }
+    return;
+}
+
+void main() {
+    Punto p;
+    cin(p.x);
+    cin(p.y);
+
+    fila = generarFila(p.x + p.y);
+
+    if (fila[0] > 10) {
+        cout(fila[0]);
+    } else {
+        fila[0] = fila[0] + 100;
+        cout(fila[0]);
+    }
+
+    imprimirFila(fila);
+    return;
+}
