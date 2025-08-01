@@ -1,0 +1,32 @@
+struct Persona {
+    int edad;
+    bool esEstudiante;
+};
+
+struct Grupo {
+    Persona miembros[10];
+    Persona @ lider; 
+};
+
+void main() {
+    Persona p1;
+    Persona @ p2;
+    Grupo g;
+
+    p2 = new Persona;
+	p2->edad = 25;
+	p2->esEstudiante = true;
+
+    g.lider = p2;
+    g.miembros[0].edad = 30;
+    g.miembros[1].esEstudiante = false;
+
+    //Persona @ @ pp;
+    pp = &p2;
+    @@pp -> edad = 35;
+    @p2.esEstudiante = false;
+
+    this -> lider -> edad = 40;
+
+    return;
+}

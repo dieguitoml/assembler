@@ -1,0 +1,41 @@
+// This is a comment /* */ */
+
+/*  aisuhaisudh /
+ Aisuhdi // Asd
+ // Test *
+*/
+
+// Empty Stmt
+// NamespaceDefinition
+
+
+//int @dir = new int;
+
+int declaracion = 3;
+
+int ndfs1( int p1, bool p2, int p3, int p4 )
+{
+	int a1;
+	int b2 = 10000001231;
+	
+	int c = -20;
+	int d = 2;	// THIS IS NOT AN INT
+	
+
+	bool b = TRUE;
+	bool f = FALSE;
+
+	//bool c2 = !(b && c) || (TRUE && FALSE )|| !(2 < 5);
+
+	for (int i=1; a < 10; ++i) {
+		for (int a=1; a < 10; ++a) {
+			break;
+		}
+	}
+
+	return a;
+}
+void main() {
+
+	return;
+}

@@ -1,0 +1,23 @@
+type int VectorBase;
+
+int resultado[5];
+
+VectorBase[5] generarDobles() {
+    VectorBase temp[5] = {0, 0, 0, 0, 0};
+    for (int i = 0; i < 5; i = i + 1) {
+        temp[i] = i * 2;
+    }
+    return temp;
+}
+
+void mostrarResultado() {
+    for (int i = 0; i < 5; i = i + 1) {
+        //COUT(temp[i]);
+    }
+    return;
+}
+void main(){
+	resultado = generarDobles();
+	mostrarResultado();
+	return;
+}

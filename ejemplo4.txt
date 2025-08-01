@@ -1,0 +1,26 @@
+int a = 2+2;
+struct tPersona{
+	int h =1;
+	bool y;
+};
+
+int[2][3] function(){
+	int x;
+	int hola[10];
+	if(a==1){
+		x = hola[2][1] + 2;
+	}else {
+	    r = (2+3)*5;
+		switch(x){
+		 case 1:
+		 
+		 break;
+		}
+	}
+	return x;
+}
+
+
+void main(){
+	return;
+}

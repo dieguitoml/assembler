@@ -1,0 +1,14 @@
+Autores: Diego Martínez López, Damián Benasco Sánchez
+
+En el main tenemos la llamada a tipado y binding
+y a la generación de código pero esta última comentada,
+para poder llamar correctamente a tipado y binding.
+
+Para generar el código, descomentar la llamada.
+
+En la carpeta de ejemplos de generación de código, están todos
+los ejemplos con el código ya generado por el main.java,
+pero se pueden volver a generar si se requiere.
+
+De generación de código aún nos falta la devolución de un array por una función y la devolución de un struct, el resto 
+está implementado.
