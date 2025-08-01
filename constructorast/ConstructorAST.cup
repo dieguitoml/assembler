@@ -1,0 +1,985 @@
+package constructorast;
+import java.util.Scanner;  
+import java_cup.runtime.*;
+import alex.AnalizadorLexicoExp;
+import alex.UnidadLexica;
+import alex.TokenValue;
+import errors.GestionErroresExp;
+import ast.*;
+import ast.E;
+import ast.Identificador;
+import ast.Num;
+import ast.EBin;
+import ast.EUnario;
+import ast.KindE;
+import java.util.List;
+import java.util.ArrayList;
+
+scan with {: return getScanner().next_token(); :};
+action code {:
+:};
+parser code {: 
+   private GestionErroresExp errores;
+   public void syntax_error(Symbol unidadLexica) {
+     errores.errorSintactico((UnidadLexica)unidadLexica);
+   }
+:};
+init with {: 
+   errores = new GestionErroresExp();
+   AnalizadorLexicoExp alex = (AnalizadorLexicoExp)getScanner();
+   alex.fijaGestionErrores(errores);
+:};
+
+
+
+
+terminal  DOSPUNTOS, MAS, MENOS, POR, MOD, IGUAL, DIST, MENOR, MAYOR, MENORIGUAL, MAYORIGUAL, AND, OR, 
+	     NOT, ASIGNACION, DIRECCION, CONTPUNT, PAP, PCIERRE, CA, CC, LLAVEAPERTURA, LLAVECIERRE, COMA,  MAIN,
+	     PUNTOYCOMA, DIV, INT, BOOL, NEW, TYPE, TRUE,FALSE, STRUCT, FLECHA, THIS, NULL, CONST, CLASS, VOID, BREAK, FOR, WHILE, RETURN, DEFAULT, CASE,SWITCH, ELSE, IF, CIN, COUT, 				ACCESO;
+
+terminal  TokenValue IDEN;
+
+terminal TokenValue ENT;
+
+terminal TokenValue REAL;
+
+non terminal instruccionFor, CaseExterior, acceso4Bis, typeDeclaration, corchetes, variableDeclaration2,  forInterior, 
+              functionCall, listaLlamada1, listaLlamada2 ,sw, whileInterior, If, tipoFuncional, bloqueInterior, bloqueInterior1, funcionDef,pasoParametros, listaParametrosSeguidos,  operacion, S, S2, 
+			  listaParametros, typeDeclaration1, tipoSimple, Declaracion, 
+			  classDeclaration, constructor, classBody, functionDeclaration, outDeclaration, variableDeclaration, declarationWithAssignment, inDeclaration, io,
+			  assignment, parametro, acceso3Intermedio, casoDefault, operacionBis,
+			  FuncionMain, bloqueFuncion,  opAritmetica2,  opAritmetica3,  opBooleana,  opBooleana2,  opBooleana3, 
+			  opBooleana4,  opBooleana5,  opBooleana6, userType, cuerpoStruct, expresion,  acceso,  acceso1,  acceso2,  acceso3,  acceso4,  acceso5;
+
+
+S ::= S2: s2 FuncionMain: funcMain
+    {:     	
+        RESULT = new S((S2) s2, (DeclaracionFuncion) funcMain);
+    :}
+    | ;
+    
+
+S2 ::= S2: s2 Declaracion: d
+    {: 
+        ((S2) s2).addDeclaracion((Declaracion) d);
+        RESULT = (S2) s2; 
+    :} 
+    | 
+    {: 
+        RESULT = new S2();   
+    :};
+    
+Declaracion ::= outDeclaration:outD
+	{:
+		RESULT = (Declaracion) outD;
+	:}
+	| classDeclaration:cd
+	{:
+		RESULT = (Declaracion) cd;
+	:}
+	| userType:ut
+	{:
+		RESULT = (Declaracion) ut;
+	:}; 
+
+
+
+FuncionMain ::= VOID MAIN PAP PCIERRE bloqueFuncion :bf  
+	{:
+		DeclaracionFuncion df =  new DeclaracionFuncion(new TipoVoid(), new Identificador("main"), new BloqueInteriorFuncion(new java.util.ArrayList<Parametro>(), (BloqueFuncion) bf));
+		RESULT = df;
+	:};
+
+bloqueFuncion ::= LLAVEAPERTURA bloqueInterior:bi LLAVECIERRE 
+	{:
+		RESULT = (BloqueFuncion) bi;
+	:};
+/**
+*Declaraciones de tipos y estucturas globales
+*/
+
+/*
+*Tipos definidos por el usuario
+*/
+
+tipoFuncional ::= operacion:op
+			{:
+			  RESULT = (E) op;
+			:}
+			| ;
+
+bloqueInterior ::= bloqueInterior1:bi RETURN tipoFuncional:tipoF PUNTOYCOMA
+	{:
+		((BloqueFuncion) bi).getHijos().add(new InstruccionReturn((E) tipoF));
+		RESULT = bi;
+	:};
+
+bloqueInterior1 ::= bloqueInterior1: bi functionCall:fc PUNTOYCOMA
+		{:
+			((BloqueFuncion) bi).getHijos().add((InstruccionLlamadaFuncion) fc);
+			RESULT = bi;
+		:}
+		|bloqueInterior1:bi io:i
+		{:
+			((BloqueFuncion) bi).getHijos().add((Instruccion) i);
+			RESULT = bi;
+		:}
+		| bloqueInterior1:bi RETURN tipoFuncional:tipoF PUNTOYCOMA 
+		{: 
+			((BloqueFuncion) bi).getHijos().add(new InstruccionReturn((E) tipoF));
+			RESULT = bi;	
+		:}
+		| bloqueInterior1:bi inDeclaration:inDecl
+		{: 
+			((BloqueFuncion) bi).getHijos().add((Declaracion) inDecl);
+			RESULT = bi;
+		:}
+		| bloqueInterior1:bi IF If :ifD
+		{: 
+			
+			((BloqueFuncion) bi).getHijos().add((Instruccion) ifD);
+			RESULT = bi;
+		:}
+		| bloqueInterior1:bi FOR forInterior :forD 
+		{: 
+			
+			((BloqueFuncion) bi).getHijos().add((Instruccion) forD);
+			RESULT = bi;
+		:}
+		| bloqueInterior1:bi WHILE whileInterior:whileD
+		{: 
+			
+			((BloqueFuncion) bi).getHijos().add((Instruccion) whileD);
+			RESULT = bi;
+		:}
+		| bloqueInterior1:bi SWITCH sw:switchD
+		{: 
+			
+			((BloqueFuncion) bi).getHijos().add((Instruccion) switchD);
+			RESULT = bi;
+		:}
+		|bloqueInterior1:bi BREAK PUNTOYCOMA 
+		{: 
+			((BloqueFuncion) bi).getHijos().add(new InstruccionBreak());
+			RESULT = bi;
+		:}
+		| bloqueInterior1:bi assignment:a
+		{:
+		  ((BloqueFuncion) bi).getHijos().add((Instruccion) a);
+		  RESULT = bi; 		
+		:}
+		| 
+		{: 
+		RESULT = new BloqueFuncion(new java.util.ArrayList<ASTNode>());:};
+
+forInterior ::= PAP declarationWithAssignment:as opBooleana:op1 PUNTOYCOMA instruccionFor:i PCIERRE LLAVEAPERTURA bloqueInterior1:bi LLAVECIERRE
+	{:
+		RESULT = new InstruccionFor((DeclaracionVariableConAsign) as, (E) op1, (ASTNode) i, (BloqueFuncion) bi);
+	:};
+instruccionFor ::= acceso:a ASIGNACION expresion:exp
+				{:
+				   RESULT = new Asignacion((Identificador) a, (E) exp);
+				:}
+				| operacion:a
+				{:
+					RESULT = (EUnario) a;
+				:};
+
+If ::= PAP opBooleana:op PCIERRE LLAVEAPERTURA bloqueInterior1:bi LLAVECIERRE
+	{:
+		RESULT = new InstruccionIf((E) op, (BloqueFuncion) bi);
+	:}
+	| PAP opBooleana:op PCIERRE LLAVEAPERTURA bloqueInterior1:biIf LLAVECIERRE ELSE LLAVEAPERTURA bloqueInterior1:biElse LLAVECIERRE
+	{:
+		RESULT = new InstruccionIf((E) op, (BloqueFuncion) biIf, true, (BloqueFuncion) biElse);
+	:}
+	 |PAP opBooleana:op PCIERRE LLAVEAPERTURA bloqueInterior1:biIf LLAVECIERRE ELSE
+	 {:
+	  RESULT = new Error_Ins();
+	:}
+	 |error
+	 {:
+	  RESULT = new Error_Ins();
+	:};
+
+whileInterior ::= PAP opBooleana:op PCIERRE LLAVEAPERTURA bloqueInterior1:bi LLAVECIERRE
+	{:
+		RESULT = new InstruccionWhile((E) op, (BloqueFuncion) bi);
+	:}
+	|error
+	{:
+	  RESULT = new Error_Ins();
+	:};
+
+sw ::=  PAP acceso:e PCIERRE LLAVEAPERTURA CaseExterior:ci LLAVECIERRE
+ 	  {:
+		@SuppressWarnings("unchecked")
+		InstruccionSwitch is = new InstruccionSwitch((Identificador) e, (java.util.ArrayList) ci, false, null);
+	  	RESULT = is;
+	  :}
+	  | PAP acceso:e PCIERRE LLAVEAPERTURA CaseExterior:ci casoDefault:def LLAVECIERRE
+	  	{:
+	  	@SuppressWarnings("unchecked")
+		InstruccionSwitch is = new InstruccionSwitch((Identificador) e, (java.util.ArrayList) ci, true,(Default) def);
+	  	RESULT = is;
+	  :};
+
+casoDefault ::= DEFAULT DOSPUNTOS bloqueInterior1:bi
+	{:
+		RESULT = new Default((BloqueFuncion) bi);
+	:};
+
+
+CaseExterior ::= CaseExterior:cee CASE expresion:e DOSPUNTOS bloqueInterior1:bi
+		{:
+			@SuppressWarnings("unchecked")
+			java.util.ArrayList<Caso> l = (java.util.ArrayList) cee;
+			Caso c = new Caso ((E) e, (BloqueFuncion) bi);
+			l.add((Caso) c);
+			RESULT = l;
+		:}
+		| 
+		{:
+			RESULT = new java.util.ArrayList<Caso>();			
+		:};
+
+userType ::= TYPE typeDeclaration1:t IDEN:idValue PUNTOYCOMA
+	{:
+		DeclaracionTipoUsuario dt = new DeclaracionTipoUsuario((Tipo) t, new TipoIdentificador(idValue.lexema));
+		RESULT = dt;
+	:}
+	|	TYPE typeDeclaration1:td corchetes:cc IDEN:idValue PUNTOYCOMA
+	{:  @SuppressWarnings("unchecked")
+		TipoArray t = new TipoArray((Tipo)td, (java.util.ArrayList) cc);
+		DeclaracionTipoUsuario dt = new DeclaracionTipoUsuario(t, new TipoIdentificador(idValue.lexema));
+		RESULT = dt;
+	:};
+/*
+*Tipos estructurados
+*/
+
+cuerpoStruct ::=  variableDeclaration2:decl cuerpoStruct:cStruct
+	{:
+		@SuppressWarnings("unchecked")
+		java.util.ArrayList<Declaracion> l = (java.util.ArrayList) cStruct;
+		l.add((Declaracion) decl);
+		RESULT = l;
+	:}
+	|
+	{: RESULT = new java.util.ArrayList<Declaracion>();:};  
+
+/*
+* Clases (Obligamos a que el constructor sea lo primero que se declare) (es cambiable)
+*/
+
+
+classDeclaration ::= CLASS IDEN:idValue LLAVEAPERTURA constructor:construct classBody:body LLAVECIERRE
+	{:
+		
+		RESULT = new DeclaracionClase(new Identificador(idValue.lexema), (DeclaracionFuncion) construct, (BloqueFuncion) body);
+	:};
+
+constructor ::= IDEN:idValue funcionDef:fd
+	{:
+		RESULT = new DeclaracionFuncion(new TipoVoid(), new Identificador(idValue.lexema), (BloqueInteriorFuncion) fd);
+	:};
+
+classBody ::= classBody:cb outDeclaration:outD 
+	{:
+		((BloqueFuncion) cb).getHijos().add((Declaracion) outD);
+		RESULT = cb;
+	:}
+ 	| 
+ 	{: 
+ 	RESULT = new BloqueFuncion(new java.util.ArrayList<ASTNode>());
+ 	:};
+/*
+* Tipos generales 
+*/
+
+typeDeclaration ::= typeDeclaration1:td CONTPUNT 
+	{:
+		RESULT = new TipoPuntero((Tipo) td);
+	:}
+	| tipoSimple:t
+	{:
+		RESULT = (Tipo) t;
+	:};
+
+outDeclaration ::= functionDeclaration:fd
+	{:
+		RESULT = (Declaracion) fd; 
+	:}
+	| variableDeclaration:vd
+	{:
+		RESULT = (Declaracion) vd;
+	:};
+
+inDeclaration ::=  variableDeclaration2:vd
+				{:
+					RESULT = (Declaracion) vd;
+				:};
+				
+				
+functionDeclaration ::= typeDeclaration1:td IDEN:idValue funcionDef:fDef
+	{:
+		DeclaracionFuncion df = new DeclaracionFuncion((Tipo) td, new Identificador(idValue.lexema), (BloqueInteriorFuncion) fDef);
+		RESULT = df;
+	:}
+	| VOID IDEN:idValue funcionDef:fDef
+	{:
+		DeclaracionFuncion df = new DeclaracionFuncion(new TipoVoid(), new Identificador(idValue.lexema), (BloqueInteriorFuncion) fDef);
+		RESULT = df;
+	:}
+	| typeDeclaration:td corchetes:ccc IDEN:idValue funcionDef:fDef
+	{:
+		@SuppressWarnings("unchecked")
+		TipoArray t = new TipoArray((Tipo)td, (java.util.ArrayList) ccc);
+		DeclaracionFuncion df =  new DeclaracionFuncion(t, new Identificador(idValue.lexema), (BloqueInteriorFuncion) fDef);
+		RESULT = df;
+	:}
+	| acceso4Bis:acc IDEN:idValue funcionDef:fDef
+	{:
+		AccesoArray accArray = (AccesoArray) acc;
+
+		@SuppressWarnings("unchecked")
+		Tipo tipoBase = null;
+
+		if (accArray.getArrayBase() instanceof Tipo) {
+			tipoBase = (Tipo) accArray.getArrayBase();
+		} else if (accArray.getArrayBase() instanceof Identificador) {
+			tipoBase = new TipoIdentificador(((Identificador) accArray.getArrayBase()).name());
+		} else {
+			throw new RuntimeException("Tipo base no valido en declaracion de funcion con array");
+		}
+
+		if (tipoBase == null) {
+			throw new RuntimeException("tipoBase no pudo ser inicializado");
+		}
+
+		java.util.ArrayList<Dimensiones> dims = new java.util.ArrayList<Dimensiones>();
+    	for (E indexExpr : accArray.getIndices()) {
+        if (indexExpr instanceof Num) {
+            dims.add(new Dimensiones((Num) indexExpr));
+        } else {
+			throw new RuntimeException("Dimension no valida en declaracion de funcion con array");
+        }
+       }
+        DeclaracionFuncion df =  new DeclaracionFuncion(new TipoArray(accArray.getArrayBase(), dims), new Identificador(idValue.lexema), (BloqueInteriorFuncion) fDef);
+		RESULT =df;
+	:};
+
+variableDeclaration ::= STRUCT IDEN:idValue LLAVEAPERTURA cuerpoStruct:cuerpo LLAVECIERRE PUNTOYCOMA 
+	{:
+		@SuppressWarnings("unchecked")
+		java.util.ArrayList<Declaracion> arg =  (java.util.ArrayList<Declaracion>) cuerpo;
+		DeclaracionStruct de = new DeclaracionStruct(new Identificador(idValue.lexema), arg);
+		RESULT = de;
+	:}
+	| variableDeclaration2:vd
+	{:
+		RESULT = (Declaracion) vd;
+	:};
+
+variableDeclaration2 ::=  typeDeclaration1:td  IDEN:idValue PUNTOYCOMA 
+						{:
+							DeclaracionVariable dv = new DeclaracionVariable((Tipo) td, new Identificador(idValue.lexema));
+							RESULT = dv;
+						:}
+						| declarationWithAssignment:d
+						{:
+							RESULT = (DeclaracionVariableConAsign) d;
+						:}
+						|  typeDeclaration1:td  IDEN:idValue corchetes:cor PUNTOYCOMA 
+						{:
+							@SuppressWarnings("unchecked")
+							TipoArray t = new TipoArray((Tipo)td, (java.util.ArrayList) cor);
+							DeclaracionVariable dv =  new DeclaracionVariable((TipoArray)t, new Identificador(idValue.lexema));
+							RESULT = dv;
+					    :};
+
+declarationWithAssignment ::= CONST typeDeclaration1:td IDEN:idValue ASIGNACION expresion:e PUNTOYCOMA 
+							{:
+								@SuppressWarnings("unchecked")
+								java.util.ArrayList<E> exp =  new java.util.ArrayList<E>();
+							 	exp.add((E) e);
+							 	DeclaracionVariableConAsign dv = new DeclaracionVariableConAsign(new TipoConst((Tipo) td), new Identificador(idValue.lexema), (java.util.ArrayList<E>) exp);
+								RESULT = dv;
+							:}
+							| typeDeclaration1:td IDEN:idValue ASIGNACION expresion:e PUNTOYCOMA 
+							{:
+							 @SuppressWarnings("unchecked")
+        					 java.util.ArrayList<E> exp =  new java.util.ArrayList<E>();
+							 exp.add((E) e);
+							 DeclaracionVariableConAsign dva = new DeclaracionVariableConAsign((Tipo) td, new Identificador(idValue.lexema),(java.util.ArrayList<E>) exp);
+							 RESULT = dva;
+							:}
+							| typeDeclaration1:td IDEN:idValue corchetes:cc ASIGNACION LLAVEAPERTURA listaLlamada1:l LLAVECIERRE PUNTOYCOMA 
+							{:
+							 	@SuppressWarnings("unchecked")
+							 	
+							 	java.util.ArrayList<E> p = (java.util.ArrayList) l;
+							 	@SuppressWarnings("unchecked")
+							 	java.util.ArrayList<Dimensiones> lista = (java.util.ArrayList) cc;
+							 	Identificador id = new Identificador(idValue.lexema);
+							 	DeclaracionVariableConAsign dv =  new DeclaracionVariableConAsign(new TipoArray((Tipo)td, lista), (Identificador) id, p);
+					  	     	RESULT = dv;
+							:}
+							| typeDeclaration1:td IDEN:idValue ASIGNACION LLAVEAPERTURA listaLlamada1:l LLAVECIERRE PUNTOYCOMA 
+					  		{:
+							 @SuppressWarnings("unchecked")
+    						 java.util.ArrayList<E> p = (java.util.ArrayList) l; 
+							 Identificador id = new Identificador(idValue.lexema);
+							 DeclaracionVariableConAsign dv = new DeclaracionVariableConAsign((Tipo)td, (Identificador) id, p); 
+					  	     RESULT = dv;
+					 		:};
+					 		
+assignment ::= acceso:a ASIGNACION expresion:exp PUNTOYCOMA
+	{:
+		RESULT = new InstruccionAsignacion((E) a, (E) exp);
+	:};
+
+io ::= COUT PAP operacion:e PCIERRE PUNTOYCOMA 
+		{:
+			RESULT = new InstruccionCOUT((E) e);
+		:}
+		| CIN PAP operacion:e PCIERRE PUNTOYCOMA
+		{:
+			RESULT = new InstruccionCIN((E) e);
+		:};
+
+expresion ::= operacion:op
+			{:
+			RESULT = (E) op;
+			:}
+			| NEW INT 
+			{:
+			    RESULT = new NEW (new TipoInt());
+			:}
+			| NEW BOOL 
+			{:
+				RESULT = new NEW (new TipoBool());			
+			:}
+			| NEW IDEN:idValue listaLlamada1:l
+			{:
+				@SuppressWarnings("unchecked")
+				java.util.ArrayList<E> p = (java.util.ArrayList) l;
+				RESULT = new NEW(new TipoIdentificador(idValue.lexema));
+			:};
+
+tipoSimple ::= INT 
+			   {:
+			    RESULT = new TipoInt();
+			   :}
+			   | BOOL
+			   {:
+			    RESULT = new TipoBool();
+			   :};
+
+typeDeclaration1 ::= typeDeclaration1:td CONTPUNT
+				{:
+					RESULT = new TipoPuntero((Tipo) td);
+				:}
+				|  tipoSimple: ts
+				{:
+				  RESULT = (Tipo) ts;
+				:}
+				| IDEN: idValue
+				{: 
+				 TipoIdentificador ti = new TipoIdentificador(idValue.lexema);
+   				 RESULT = ti;
+				:};
+
+funcionDef ::= PAP listaParametros:lp PCIERRE bloqueFuncion:bf
+	{:
+		@SuppressWarnings("unchecked")
+        java.util.ArrayList<Parametro> parametros = (java.util.ArrayList) lp;
+        RESULT = new BloqueInteriorFuncion(parametros, (BloqueFuncion) bf);
+	:}
+	| PAP listaParametros:lp PCIERRE PUNTOYCOMA
+	{:
+		@SuppressWarnings("unchecked")
+        java.util.ArrayList<Parametro> parametros = (java.util.ArrayList) lp;
+        RESULT = new BloqueInteriorFuncion(parametros, new BloqueFuncion(new java.util.ArrayList<ASTNode>()));
+	:};
+
+functionCall ::=  IDEN:idValue PAP listaLlamada1:parametros PCIERRE
+	{:
+		@SuppressWarnings("unchecked")
+		java.util.List<E> p = (java.util.ArrayList) parametros;
+		InstruccionLlamadaFuncion llf = new InstruccionLlamadaFuncion(new Identificador(idValue.lexema), p);
+		RESULT = llf; 
+	:};
+
+listaLlamada1 ::= operacion:op COMA listaLlamada2:l 
+	{:
+		@SuppressWarnings("unchecked")
+		java.util.ArrayList<E> p = (java.util.ArrayList) l;
+		p.add((E) op);
+		RESULT = p;
+	:}
+	| operacion:op
+	{:
+		java.util.ArrayList<E> p = new java.util.ArrayList<E>();
+		p.add((E) op);
+		RESULT = p;
+	:}
+	| 
+	{:
+		RESULT = new java.util.ArrayList<E>();
+	:};
+
+listaLlamada2 ::= operacion:op
+	{:
+		java.util.ArrayList<E> lista = new java.util.ArrayList<E>();
+		lista.add((E) op);
+		RESULT = lista;
+	:}
+	| operacion:op COMA listaLlamada2:l
+	{:
+		@SuppressWarnings("unchecked")
+		java.util.ArrayList<E> p = (java.util.ArrayList) l;
+		p.add((E) op);
+		RESULT = p;
+	:};
+
+/**
+*Declaracion de funciones(de momento simples)
+*/
+
+pasoParametros ::=  typeDeclaration1:t DIRECCION 
+	{:
+		RESULT = new TipoReference((Tipo) t);
+	:}
+	| typeDeclaration1:t
+	{:
+		RESULT = (Tipo) t;
+	:};
+
+corchetes ::= corchetes:c CA ENT:numValue CC 
+			{: 
+				@SuppressWarnings("unchecked")
+				java.util.ArrayList<Dimensiones> lista = (java.util.ArrayList) c;
+				lista.add(new Dimensiones(new Num(numValue.lexema)));
+				RESULT = lista;
+			:}
+			| CA ENT:numValue CC
+			{:
+				java.util.ArrayList<Dimensiones> lista =  new java.util.ArrayList<Dimensiones>();
+				Dimensiones d = new Dimensiones(new Num(numValue.lexema));
+				lista.add((Dimensiones) d);
+				RESULT = lista;
+			:};
+
+parametro ::= CONST pasoParametros:t IDEN:idValue 
+	{:
+		ParametroAux pa = new ParametroAux(new TipoConst((Tipo) t), idValue.lexema);
+		RESULT = pa;
+	:}
+	| pasoParametros:t IDEN:idValue
+	{:
+		ParametroAux pa =  new ParametroAux((Tipo) t, idValue.lexema);
+		RESULT = pa;
+	:};
+
+
+listaParametros ::= parametro:p
+	{: 
+		@SuppressWarnings("unchecked")
+		java.util.ArrayList<Parametro> lista = new java.util.ArrayList<Parametro>();
+		lista.add(new Parametro((ParametroAux) p));
+		RESULT = lista;
+	:}
+	| parametro:p corchetes:cc
+	{:
+		@SuppressWarnings("unchecked")
+		java.util.ArrayList<Parametro> lista = new java.util.ArrayList<Parametro>();
+		@SuppressWarnings("unchecked")
+		java.util.ArrayList<Dimensiones> d = (java.util.ArrayList<Dimensiones>) cc;
+		lista.add(new Parametro((ParametroAux) p, d));
+		RESULT = lista;
+	:} 
+	| parametro:p COMA listaParametrosSeguidos:l
+	{:
+		@SuppressWarnings("unchecked")
+		java.util.ArrayList<Parametro> lista = (java.util.ArrayList) l;
+		lista.add(new Parametro((ParametroAux) p));
+		RESULT = lista;
+	:} 
+	| parametro:p corchetes:cc COMA listaParametrosSeguidos:l
+	{:
+		@SuppressWarnings("unchecked")
+		java.util.ArrayList<Parametro> lista = (java.util.ArrayList) l;
+		@SuppressWarnings("unchecked")
+		java.util.ArrayList<Dimensiones> d = (java.util.ArrayList<Dimensiones>) cc;
+		lista.add(new Parametro((ParametroAux) p, d));
+		RESULT = lista;
+	:}
+	| 
+	{:
+		RESULT = new java.util.ArrayList<Parametro>();
+	:};
+
+listaParametrosSeguidos ::= parametro:p
+	{: 
+	    @SuppressWarnings("unchecked")
+		java.util.ArrayList<Parametro> lista = new java.util.ArrayList<Parametro>();
+		lista.add(new Parametro((ParametroAux) p));
+		RESULT = lista;
+	:}
+	| parametro:p corchetes:cc
+	{:
+		@SuppressWarnings("unchecked")
+		java.util.ArrayList<Parametro> lista = new java.util.ArrayList<Parametro>();
+		@SuppressWarnings("unchecked")
+		java.util.ArrayList<Dimensiones> d = (java.util.ArrayList<Dimensiones>) cc;
+		lista.add(new Parametro((ParametroAux) p, d));
+		RESULT = lista;
+	:} 
+	| parametro:p COMA listaParametrosSeguidos:l
+	{:
+		@SuppressWarnings("unchecked")
+		java.util.ArrayList<Parametro> lista = (java.util.ArrayList) l;
+		lista.add(new Parametro((ParametroAux) p));
+		RESULT = lista;
+	:} 
+	| parametro:p corchetes:cc COMA listaParametrosSeguidos:l
+	{:
+		@SuppressWarnings("unchecked")
+		java.util.ArrayList<Parametro> lista = (java.util.ArrayList) l;
+		@SuppressWarnings("unchecked")
+		java.util.ArrayList<Dimensiones> d = (java.util.ArrayList<Dimensiones>) cc;
+		lista.add(new Parametro((ParametroAux) p, d));
+		RESULT = lista;
+	:};
+
+
+operacion ::= MENOS operacionBis:op 
+	{: RESULT = new EUnario(KindE.NEGATIVO, (E) op); :} 
+	| MENOS error
+	{:
+	   RESULT = new Error_Exp();
+	:}
+	| operacionBis:op
+	{:
+		RESULT = (E) op;
+	:};
+
+operacionBis ::= MAS MAS operacionBis: op 
+	{: RESULT = new EUnario(KindE.INCR, (E) op); :} 
+	| MAS MAS error
+	{:
+		RESULT = new Error_Exp();
+	:}
+	| MENOS MENOS operacionBis: op
+	{: RESULT = new EUnario(KindE.DECR, (E) op); :} 
+	| MENOS MENOS error
+	{:
+		RESULT = new Error_Exp();
+	:}
+	| opAritmetica2:op
+	{:
+		RESULT = (E) op;
+	:};
+
+opAritmetica2 ::= opAritmetica2: op2 POR opAritmetica3: op3 
+	{: RESULT = new EBin(KindE.MULTIPLICACION, (E) op2, (E) op3); :} 
+	| error POR opAritmetica3:op3
+	{:
+		RESULT = new Error_Exp();
+	:}
+	| opAritmetica2: op2 POR error
+	{:
+		RESULT = new Error_Exp();
+	:}
+	| opAritmetica2: op2 MOD opAritmetica3: op3
+	{: RESULT = new EBin(KindE.MODULO, (E) op2, (E) op3); :} 
+	| error MOD opAritmetica3: op3
+	{:
+		RESULT = new Error_Exp();
+	:}
+	| opAritmetica2:op2 MOD error
+	{:
+	    RESULT = new Error_Exp();
+	:}
+	| opAritmetica2: op2 DIV opAritmetica3: op3
+	{: RESULT = new EBin(KindE.DIVISION, (E) op2, (E) op3); :} 
+	| error DIV opAritmetica3: op3
+	{:
+		RESULT = new Error_Exp();
+	:}
+	| opAritmetica2: op2 DIV error
+	{:
+		RESULT = new Error_Exp();
+	:}
+	| opAritmetica3:op
+	{:
+		RESULT = (E) op;
+	:};
+
+opAritmetica3 ::= opAritmetica3:op3 MAS opBooleana:opb 
+                 {:
+                  RESULT = new EBin(KindE.SUMA, (E) op3, (E) opb);
+                 :}
+                 | error MAS opBooleana: opb
+                 {:
+					RESULT = new Error_Exp();
+				 :}
+				 | opAritmetica3:op3 MAS error
+				 {:
+					RESULT = new Error_Exp();
+				 :}
+                 | opAritmetica3:op3 MENOS opBooleana:opb 
+                 {:
+                  RESULT = new EBin(KindE.RESTA, (E) op3, (E) opb);
+                 :}
+                 | error MENOS opBooleana:opb
+                 {:
+					RESULT = new Error_Exp();
+				 :}
+				 |opAritmetica3: op3 MENOS error
+				 {:
+					RESULT = new Error_Exp();
+				 :}
+                 | opBooleana:opb
+                 {:
+                  RESULT = (E) opb;
+                 :};
+
+opBooleana ::= NOT opBooleana: op1
+	{: RESULT = new EUnario(KindE.NOT, (E) op1); :}
+	| NOT error
+	{:
+	  RESULT = new Error_Exp();
+	:}
+	| opBooleana2:op
+	{:
+		RESULT = (E) op;
+	:};
+
+opBooleana2 ::= opBooleana2: opb2 MENOR opBooleana3: opb3
+	{: RESULT = new EBin(KindE.MENOR, (E) opb2, (E) opb3); :}
+	| error MENOR opBooleana3:opb3
+	{:
+	  RESULT = new Error_Exp();
+	:}
+	| opBooleana2: opb2 MENOR error
+	{:
+	  RESULT = new Error_Exp();
+	:}
+	| opBooleana2: opb2 MAYOR opBooleana3: opb3 
+	{: RESULT = new EBin(KindE.MAYOR, (E) opb2, (E) opb3); :}
+	| error MAYOR opBooleana3: opb3
+	{:
+	  RESULT = new Error_Exp();
+	:}
+	| opBooleana2: opb2 MAYOR error
+	{:
+	  RESULT = new Error_Exp();
+	:}
+	| opBooleana2: opb2 MENORIGUAL opBooleana3: opb3 
+        {: RESULT = new EBin(KindE.MENORIGUAL, (E) opb2, (E) opb3); :}
+    |error MENORIGUAL opBooleana3:opb3
+    {:
+	  RESULT = new Error_Exp();
+	:}
+	| opBooleana2: opb2 MENORIGUAL error
+	{:
+	  RESULT = new Error_Exp();
+	:}
+	| opBooleana2: opb2 MAYORIGUAL opBooleana3: opb3
+	{: RESULT = new EBin(KindE.MAYORIGUAL, (E) opb2, (E) opb3); :}
+	| error MAYORIGUAL opBooleana3: opb3
+	{:
+	  RESULT = new Error_Exp();
+	:}
+	|opBooleana2: opb2 MAYORIGUAL error
+	{:
+	  RESULT = new Error_Exp();
+	:}
+	| opBooleana3:op
+	{:
+		RESULT = (E) op;
+	:};
+
+opBooleana3 ::= opBooleana3: opb3 IGUAL opBooleana4: opb4
+        {: RESULT = new EBin(KindE.IGUAL, (E) opb3, (E) opb4); :}
+    |error IGUAL opBooleana4: opb4
+    {:
+	  RESULT = new Error_Exp();
+	:}
+	|opBooleana3: opb3 IGUAL error
+	{:
+	  RESULT = new Error_Exp();
+	:}
+	| opBooleana3: opb3 DIST opBooleana4: opb4
+        {: RESULT = new EBin(KindE.DIST, (E) opb3, (E) opb4); :}
+    | error DIST opBooleana4: opb4
+    {:
+	  RESULT = new Error_Exp();
+	:}
+	| opBooleana3: opb3 DIST error
+	{:
+	  RESULT = new Error_Exp();
+	:}
+	| opBooleana4:op
+	{:
+		RESULT = (E) op;
+	:};
+
+opBooleana4 ::= opBooleana4: opb4 AND opBooleana5: opb5
+        {: RESULT = new EBin(KindE.AND, (E) opb4, (E) opb5); :}
+    | error AND opBooleana5: opb5
+    {:
+	  RESULT = new Error_Exp();
+	:}
+	|opBooleana4: opb4 AND error
+	{:
+	  RESULT = new Error_Exp();
+	:}
+	| opBooleana5:op
+	{:
+		RESULT = (E) op;
+	:};
+
+opBooleana5 ::= opBooleana5: opb5 OR opBooleana6: opb6
+	{: RESULT = new EBin(KindE.OR, (E) opb5, (E) opb6); :}
+	|error OR opBooleana6: opb6
+	{:
+	  RESULT = new Error_Exp();
+	:}
+	|opBooleana5: opb5 OR error
+	{:
+	  RESULT = new Error_Exp();
+	:}
+	| opBooleana6:op
+	{:
+		RESULT = (E) op;
+	:};
+	
+opBooleana6 ::=  acceso:a
+			  {:
+			    RESULT = (E) a;
+			   :}
+			  | PAP operacion:op PCIERRE
+			  {:
+			  	RESULT = (E) op;
+			  :}
+			  |PAP error PCIERRE
+			    {:
+	  			RESULT = new Error_Exp();
+		    	:};
+
+acceso ::= THIS FLECHA acceso1: acc1
+	{: RESULT = new AccesoFlecha(new AccesoThis(), (E) acc1); :}
+	|THIS FLECHA error
+	{:
+	  RESULT = new Error_Exp();
+	:}
+	| acceso1:a
+	{:
+		RESULT = (E) a;
+	:};
+
+
+acceso1 ::= acceso1: acc1 FLECHA acceso2: acc2
+	 {: RESULT = new AccesoFlecha((E) acc1, (E) acc2); :}
+	| acceso2:a
+	{:
+		RESULT = (E) a;
+	:};
+
+acceso2 ::= acceso2: acc2 ACCESO acceso3: acc3
+	 {: 
+	 	RESULT = new AccesoPunto((E) acc2, (E) acc3); 
+	:}
+	|error ACCESO acceso3:acc3
+	{:
+	  RESULT = new Error_Exp();
+	:}
+	|acceso2:acc2 ACCESO error
+	{:
+	  RESULT = new Error_Exp();
+	:}
+	| acceso3:a
+	{:
+		RESULT = (E) a;
+	:};
+
+acceso3 ::= CONTPUNT acceso3: acc3
+	{: RESULT = new AccesoPuntero((E) acc3); :}
+	|CONTPUNT error
+	{:
+	  RESULT = new Error_Exp();
+	:}
+	| acceso3Intermedio:a
+	{:
+		RESULT = (E) a;
+	:};
+
+acceso3Intermedio ::= DIRECCION acceso3Intermedio:acc3
+	{: RESULT = new AccesoDireccion((E) acc3); :}
+	|DIRECCION error
+	{:
+	  RESULT = new Error_Exp();
+	:}
+	| acceso4:a
+	{:
+		RESULT = (E) a;
+	:};
+
+acceso4Bis ::= acceso4Bis: acc4 CA operacion: op CC 
+	 {: 
+	 	((AccesoArray) acc4).getIndices().add((E) op);
+		RESULT = acc4;
+	 :}
+	 | error CA operacion:op CC
+	 {:
+	  RESULT = new Error_Exp();
+	:}
+	|
+	acceso5: acc5 CA operacion:op CC 
+	{:
+		@SuppressWarnings("unchecked")
+		java.util.ArrayList<E> lista = new java.util.ArrayList<E>();
+		lista.add((E) op);
+	 	RESULT = new AccesoArray((E) acc5, lista); 
+	:};
+
+acceso4 ::= acceso4Bis:acc4
+	{:
+		RESULT = (E) acc4;
+	:}
+	| acceso5:acc5
+	{:
+		RESULT = (E) acc5;
+	:};
+
+acceso5 ::= NULL 
+	{:
+		RESULT = new Null();
+	:}
+	| ENT: numValue
+	{: 
+    	RESULT = new Num(numValue.lexema); 
+	:}
+	| REAL: floatValue
+	{: 
+    	RESULT = new Num(floatValue.lexema); 
+	:}
+	| TRUE 
+	{: RESULT = new BOOLEAN(true); :}
+	| FALSE 	
+	{: RESULT = new BOOLEAN(false); :}
+	| IDEN: idValue
+	{: 
+		Identificador id = new Identificador(idValue.lexema); 
+    	RESULT = id;
+	:}
+	| functionCall:fc
+	{:
+		RESULT = (InstruccionLlamadaFuncion) fc;
+	:};
+
+
+
